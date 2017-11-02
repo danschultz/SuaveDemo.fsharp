@@ -65,6 +65,7 @@
     <Compile Include="Database.fs" />
     <Compile Include="Html.fs" />
     <Compile Include="Path.fs" />
+    <Compile Include="Form.fs" />
     <Compile Include="Views.fs" />
     <Compile Include="App.fs" />
     <Content Include="Site.css">

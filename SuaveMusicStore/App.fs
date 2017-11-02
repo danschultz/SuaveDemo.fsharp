@@ -4,13 +4,18 @@ open Suave.Operators
 open Suave.Successful
 open Suave.RequestErrors
 open Suave.Web
+open Suave.Form
+open Suave.Model.Binding
 
 let html container =
     OK (View.index container)
 
+let bindToForm form handler =
+    bindReq (bindForm form) handler BAD_REQUEST
+
 module Store =
 
-    let overview = 
+    let overview =
         Database.getContext()
         |> Database.getGenres
         |> List.map (fun genre -> genre.Name)
@@ -20,7 +25,7 @@ module Store =
     let browse =
         request (fun r ->
             match r.queryParam Path.Store.browseKey with
-            | Choice1Of2 genre -> 
+            | Choice1Of2 genre ->
                 Database.getContext ()
                 |> Database.getAlbumsForGenre genre
                 |> View.Store.browse genre
@@ -35,18 +40,38 @@ module Store =
 
 module Admin =
 
-    let manage = warbler (fun _ -> 
+    let manage = warbler (fun _ ->
         Database.getContext ()
         |> Database.getAlbumsDetails
         |> View.Admin.manage
         |> html)
 
+    let createAlbum =
+        let context = Database.getContext ()
+        choose [
+            GET >=> warbler (fun _ ->
+                let genres =
+                    Database.getGenres context
+                    |> List.map (fun genre -> decimal genre.Genreid, genre.Name)
+                let artists =
+                    Database.getArtists context
+                    |> List.map (fun artist -> decimal artist.Artistid, artist.Name)
+                html (View.Admin.createAlbum genres artists))
+            POST >=> bindToForm Form.album (fun form ->
+                Database.createAlbum
+                    (int form.ArtistId,
+                     int form.GenreId,
+                     form.Price,
+                     form.Title) context
+                Redirection.FOUND Path.Admin.manage)
+        ]
+
     let deleteAlbum id =
         let context = Database.getContext ()
         match Database.getAlbum id context with
-        | Some album -> 
+        | Some album ->
             choose [
-                GET >=> warbler (fun _ -> 
+                GET >=> warbler (fun _ ->
                     html (View.Admin.deleteAlbum album.Title))
                 POST >=> warbler (fun _ ->
                     Database.deleteAlbum album context;
@@ -62,6 +87,7 @@ let webPart =
         pathScan Path.Store.details Store.details
 
         path Path.Admin.manage >=> Admin.manage
+        path Path.Admin.createAlbum >=> Admin.createAlbum
         pathScan Path.Admin.deleteAlbum Admin.deleteAlbum
 
         pathRegex "(.*)\.(css|png)" >=> Files.browseHome

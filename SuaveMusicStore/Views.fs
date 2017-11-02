@@ -1,6 +1,7 @@
 ﻿module View
 
 open Html
+open Suave.Form
 open Suave.Html
 
 let index container =
@@ -57,27 +58,27 @@ module Store =
         ]
     ]
 
-    let browse genre (albums : Database.Album list) = [ 
+    let browse genre (albums : Database.Album list) = [
         h2 (sprintf "Genre: %s" genre)
         ul [
             for album in albums ->
-                li [ 
-                    a (sprintf Path.Store.details album.Albumid) [] [ 
+                li [
+                    a (sprintf Path.Store.details album.Albumid) [] [
                         Text album.Title
-                    ] 
+                    ]
                 ]
         ]
     ]
 
-    let details (album : Database.AlbumDetails) = [ 
+    let details (album : Database.AlbumDetails) = [
         h2 album.Title
         p [] [ img [ "src", album.Albumarturl ] ]
         div ["id", "album-details"] [
-            let captions = [ "Genre: ", album.Genre 
+            let captions = [ "Genre: ", album.Genre
                              "Artist: ", album.Artist
                              "Price: ", album.Price.ToString("0.##") ]
             for (caption, text) in captions ->
-                p [] [ 
+                p [] [
                     em caption
                     Text text
                 ]
@@ -88,6 +89,9 @@ module Admin =
 
     let manage (albums : Database.AlbumDetails list) = [
         h2 "Index"
+        p [] [
+            a Path.Admin.createAlbum [] [ Text "Create New" ]
+        ]
         table [
             yield tr [
                 for t in ["Artist"; "Title"; "Genre"; "Price"; "Action"] -> th [ Text t ]
@@ -107,6 +111,33 @@ module Admin =
                     ]
                 ]
         ]
+    ]
+
+    let createAlbum genres artists = [
+        h2 "Create"
+
+        renderForm
+            { Form = Form.album
+              Fieldsets =
+                [ { Legend = "Album"
+                    Fields =
+                      [ { Label = "Genre"
+                          Html = selectInput (fun f -> <@ f.GenreId @>) genres None }
+                        { Label = "Artist"
+                          Html = selectInput (fun f -> <@ f.ArtistId @>) artists None }
+                        { Label = "Title"
+                          Html = formInput (fun f -> <@ f.Title @>) [] }
+                        { Label = "Price"
+                          Html = formInput (fun f -> <@ f.Price @>) [] }
+                        { Label = "Album Art Url"
+                          Html = formInput
+                                    (fun f -> <@ f.ArtUrl @>)
+                                    ["value", "/placeholder.gif"] }
+                      ]
+                  }
+                ]
+              SubmitText = "Create"
+            }
     ]
 
     let deleteAlbum albumTitle = [
