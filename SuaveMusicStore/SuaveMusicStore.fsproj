@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Database.fs" />
+    <Compile Include="Html.fs" />
     <Compile Include="Path.fs" />
     <Compile Include="Views.fs" />
     <Compile Include="App.fs" />
