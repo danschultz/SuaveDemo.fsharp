@@ -41,3 +41,20 @@ let getAlbumDetails id (context : DbContext) : AlbumDetails option =
             select album
     }
     |> Seq.tryHead
+
+let getAlbumsDetails (context : DbContext) : AlbumDetails list =
+    context.Public.Albumdetails
+    |> Seq.toList
+    |> List.sortBy (fun details -> details.Artist)
+
+let getAlbum id (context : DbContext) : Album option =
+    query {
+        for album in context.Public.Albums do
+            where (album.Albumid = id)
+            select album
+    }
+    |> Seq.tryHead
+
+let deleteAlbum (album : Album) (context : DbContext) =
+    album.Delete()
+    context.SubmitUpdates()

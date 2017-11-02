@@ -12,3 +12,7 @@ module Store =
     let overview = "/store"
     let browse = "/store/browse"
     let details : IntPath = "/store/details/%d"
+
+module Admin =
+    let manage = "/admin/manage"
+    let deleteAlbum : IntPath = "/admin/delete/%d"

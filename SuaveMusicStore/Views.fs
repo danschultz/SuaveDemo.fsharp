@@ -12,6 +12,25 @@ let li = tag "li" []
 
 let em s = tag "em" [] [ Text s ]
 
+let table content = tag "table" [] content
+
+let th content = tag "th" [] content
+
+let tr content = tag "tr" [] content
+
+let td content = tag "td" [] content
+
+let strong s = tag "strong" [] (text s)
+
+let form content = tag "form" [ "method", "POST" ] content
+
+let submitInput value = input ["type", "submit"; "value", value]
+
+let truncate len (s : string) =
+    if s.Length > len then
+        s.Substring(0, len - 3) + "..."
+    else s
+
 let index container =
     html [] [
         head [] [
@@ -78,6 +97,47 @@ let details (album : Database.AlbumDetails) = [
                 em caption
                 Text text
             ]
+    ]
+]
+
+let manage (albums : Database.AlbumDetails list) = [
+    h2 "Index"
+    table [
+        yield tr [
+            for t in ["Artist"; "Title"; "Genre"; "Price"; "Action"] -> th [ Text t ]
+        ]
+
+        for album in albums ->
+            let text = [ truncate 25 album.Artist
+                         truncate 25 album.Title
+                         album.Genre
+                         album.Price.ToString("0.##") ]
+            tr [
+                for t in text ->
+                    td [ Text t ]
+
+                yield td [
+                    a (sprintf Path.Admin.deleteAlbum album.Albumid) [] [ Text "Delete" ]
+                ]
+            ]
+    ]
+]
+
+let deleteAlbum albumTitle = [
+    h2 "Delete Confirmation"
+    p [] [
+        Text "Are you sure you want to delete the album titled?"
+        br []
+        strong albumTitle
+        Text "?"
+    ]
+
+    form [
+        submitInput "Delete"
+    ]
+
+    div [] [
+        a Path.Admin.manage [] [ Text "Back to list" ]
     ]
 ]
 
