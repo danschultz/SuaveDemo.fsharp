@@ -107,6 +107,8 @@ module Admin =
                         td [ Text t ]
 
                     yield td [
+                        a (sprintf Path.Admin.editAlbum album.Albumid) [] [ Text "Edit" ]
+                        Text " | "
                         a (sprintf Path.Admin.deleteAlbum album.Albumid) [] [ Text "Delete" ]
                     ]
                 ]
@@ -138,6 +140,46 @@ module Admin =
                 ]
               SubmitText = "Create"
             }
+    ]
+
+    let editAlbum (album : Database.Album) genres artists = [
+        h2 (sprintf "Edit %s" album.Title)
+
+        renderForm
+            { Form = Form.album
+              Fieldsets =
+                [ { Legend = "Album"
+                    Fields =
+                      [ { Label = "Genre"
+                          Html = selectInput
+                            (fun f -> <@ f.GenreId @>)
+                            genres
+                            (Some (decimal album.Genreid)) }
+                        { Label = "Artist"
+                          Html = selectInput
+                            (fun f -> <@ f.ArtistId @>)
+                            artists
+                            (Some (decimal album.Artistid)) }
+                        { Label = "Title"
+                          Html = formInput
+                            (fun f -> <@ f.Title @>)
+                            ["value", album.Title] }
+                        { Label = "Price"
+                          Html = formInput
+                            (fun f -> <@ f.Price @>)
+                            ["value", formatDec album.Price] }
+                        { Label = "Album Art Url"
+                          Html = formInput
+                                    (fun f -> <@ f.ArtUrl @>)
+                                    ["value", "/placeholder.gif"] }
+                      ]
+                  }
+                ]
+              SubmitText = "Save Changes"
+            }
+        div [] [
+            a Path.Admin.manage [] [ Text "Back to list" ]
+        ]
     ]
 
     let deleteAlbum albumTitle = [

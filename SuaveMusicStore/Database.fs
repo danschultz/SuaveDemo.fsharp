@@ -57,6 +57,13 @@ let createAlbum (artistId, genreId, price, title) (context : DbContext) =
     context.Public.Albums.Create(artistId, genreId, price, title) |> ignore
     context.SubmitUpdates()
 
+let updateAlbum (album : Album) (artistId, genreId, price, title) (context : DbContext) =
+    album.Artistid <- artistId
+    album.Genreid <- genreId
+    album.Title <- title
+    album.Price <- price
+    context.SubmitUpdates()
+
 let deleteAlbum (album : Album) (context : DbContext) =
     album.Delete()
     context.SubmitUpdates()

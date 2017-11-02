@@ -66,6 +66,28 @@ module Admin =
                 Redirection.FOUND Path.Admin.manage)
         ]
 
+    let editAlbum id =
+        let context = Database.getContext ()
+        match Database.getAlbum id context with
+        | Some album ->
+            choose [
+                GET >=> warbler (fun _ ->
+                    let genres =
+                        Database.getGenres context
+                        |> List.map (fun genre -> decimal genre.Genreid, genre.Name)
+                    let artists =
+                        Database.getArtists context
+                        |> List.map (fun artist -> decimal artist.Artistid, artist.Name)
+                    html (View.Admin.editAlbum album genres artists))
+                POST >=> bindToForm Form.album (fun form ->
+                    Database.updateAlbum
+                        album
+                        (int form.ArtistId, int form.GenreId, form.Price, form.Title)
+                        context
+                    Redirection.FOUND Path.Admin.manage)
+            ]
+        | None -> never
+
     let deleteAlbum id =
         let context = Database.getContext ()
         match Database.getAlbum id context with
@@ -88,6 +110,7 @@ let webPart =
 
         path Path.Admin.manage >=> Admin.manage
         path Path.Admin.createAlbum >=> Admin.createAlbum
+        pathScan Path.Admin.editAlbum Admin.editAlbum
         pathScan Path.Admin.deleteAlbum Admin.deleteAlbum
 
         pathRegex "(.*)\.(css|png)" >=> Files.browseHome
