@@ -65,7 +65,7 @@
     <Compile Include="Database.fs" />
     <Compile Include="Path.fs" />
     <Compile Include="Views.fs" />
-    <Compile Include="Program.fs" />
+    <Compile Include="App.fs" />
     <Content Include="Site.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
