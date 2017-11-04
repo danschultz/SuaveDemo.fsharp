@@ -19,6 +19,7 @@ type UserLoggedInSession = {
 
 type Session =
     | NoSession
+    | CartIdOnly of string
     | UserLoggedIn of UserLoggedInSession
 
 let hashPassword (password : string) =
@@ -193,15 +194,19 @@ module Admin =
             ]
         | None -> never
 
+let cart = View.Cart.cart [] |> html
+
 let app =
     choose [
+        path Path.Account.login >=> Admin.login
+        path Path.Account.logout >=> reset
+
         path Path.home >=> html View.home
         path Path.Store.overview >=> Store.overview
         path Path.Store.browse >=> Store.browse
         pathScan Path.Store.details Store.details
 
-        path Path.Account.login >=> Admin.login
-        path Path.Account.logout >=> reset
+        path Path.Cart.overview >=> cart
 
         path Path.Admin.manage >=> admin Admin.manage
         path Path.Admin.createAlbum >=> admin Admin.createAlbum

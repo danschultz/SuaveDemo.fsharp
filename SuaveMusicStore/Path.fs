@@ -13,6 +13,9 @@ module Store =
     let browse = "/store/browse"
     let details : IntPath = "/store/details/%d"
 
+module Cart =
+    let overview = "/cart"
+
 module Admin =
     let manage = "/admin/manage"
     let createAlbum = "/admin/create"
