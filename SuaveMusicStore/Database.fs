@@ -26,6 +26,25 @@ type CartDetails = DbContext.``public.cartdetailsEntity``
 
 let getContext () = Sql.GetDataContext()
 
+let validateUser (username, password) (context : DbContext) : User option =
+    query {
+        for user in context.Public.Users do
+            where (user.Username = username && user.Password = password)
+            select user
+    } |> Seq.tryHead
+
+let getUser username (context : DbContext) : User option =
+    query {
+        for user in context.Public.Users do
+            where (user.Username = username)
+            select user
+    } |> Seq.tryHead
+
+let newUser (username, password, email) (context : DbContext) =
+    let user = context.Public.Users.Create(username, password, "user", email)
+    context.SubmitUpdates()
+    user
+
 let getGenres (context : DbContext) : Genre list =
     context.Public.Genres |> Seq.toList
 
@@ -73,13 +92,6 @@ let deleteAlbum (album : Album) (context : DbContext) =
 
 let getArtists (context : DbContext) : Artist list =
     context.Public.Artists |> Seq.toList
-
-let validateUser (username, password) (context : DbContext) : User option =
-    query {
-        for user in context.Public.Users do
-            where (user.Username = username && user.Password = password)
-            select user
-    } |> Seq.tryHead
 
 let getCart cartId albumId (context : DbContext) : Cart option =
     query {

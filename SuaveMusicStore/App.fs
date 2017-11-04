@@ -1,5 +1,6 @@
 ﻿open System
 
+
 open Suave
 open Suave.Authentication
 open Suave.Cookie
@@ -121,27 +122,6 @@ module Store =
 
 module Admin =
 
-    let login = choose [
-        GET >=> (View.Admin.login "" |> html)
-        POST >=> bindToForm Form.login (fun form ->
-            let context = Database.getContext()
-            let (Password password) = form.Password
-            match Database.validateUser (form.Username, hashPassword password) context with
-            | Some user ->
-                authenticated Cookie.CookieLife.Session false
-                >=> session (function
-                    | CartIdOnly cartId ->
-                        Database.upgradeCarts (cartId, user.Username) context
-                        sessionStore (fun store -> store.set "cartid" "")
-                    | _ -> succeed)
-                >=> sessionStore (fun store ->
-                    store.set "username" user.Username
-                    >=> store.set "role" user.Role
-                >=> returnPathOrHome)
-            | _ -> (View.Admin.login "Incorrect username or password" |> html)
-        )
-    ]
-
     let manage = warbler (fun _ ->
         Database.getContext ()
         |> Database.getAlbumsDetails
@@ -238,9 +218,52 @@ module Cart =
             >=> Redirection.FOUND Path.Cart.overview
 
 
+module Auth =
+    let authenticateUser (user : Database.User) =
+        authenticated Cookie.CookieLife.Session false
+        >=> session (function
+            | CartIdOnly cartId ->
+                let context = Database.getContext ()
+                Database.upgradeCarts (cartId, user.Username) context
+                sessionStore (fun store -> store.set "cartid" "")
+            | _ -> succeed)
+        >=> sessionStore (fun store ->
+            store.set "username" user.Username
+            >=> store.set "role" user.Role)
+        >=> returnPathOrHome
+
+    let login =
+        choose [
+            GET >=> (View.Account.login "" |> html)
+            POST >=> bindToForm Form.login (fun form ->
+                let context = Database.getContext()
+                let (Password password) = form.Password
+                match Database.validateUser (form.Username, hashPassword password) context with
+                | Some user -> authenticateUser user
+                | _ -> (View.Account.login "Incorrect username or password" |> html)
+            )
+        ]
+
+    let register =
+        choose [
+            GET >=> (View.Account.register "" |> html)
+            POST >=> bindToForm Form.register (fun form ->
+                let context = Database.getContext ()
+                match Database.getUser form.Username context with
+                | Some _ ->
+                    "Sorry this username is taken"
+                    |> View.Account.register
+                    |> html
+                | None ->
+                    let (Password password) = form.Password
+                    let user = Database.newUser (form.Username, password, form.Email) context
+                    authenticateUser user)
+        ]
+
 let app =
     choose [
-        path Path.Account.login >=> Admin.login
+        path Path.Account.register >=> Auth.register
+        path Path.Account.login >=> Auth.login
         path Path.Account.logout >=> reset
 
         path Path.home >=> html View.home

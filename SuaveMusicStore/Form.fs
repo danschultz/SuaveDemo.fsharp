@@ -15,6 +15,13 @@ type Login = {
     Password : Password
 }
 
+type Register = {
+    Username : string
+    Email : string
+    Password : Password
+    ConfirmPassword : Password
+}
+
 let album : Form<Album> =
     Form ([
         TextProp ((fun f -> <@ f.Title @>), [ maxLength 100 ])
@@ -23,3 +30,14 @@ let album : Form<Album> =
     ], [])
 
 let login : Form<Login> = Form([], [])
+
+let passwordPattern = passwordRegex @"(\w){6,20}"
+
+let passwordsMatch =
+    (fun f -> f.Password = f.ConfirmPassword), "Passwords much match"
+
+let register : Form<Register> =
+    Form ([ TextProp ((fun f -> <@ f.Username @>), [ maxLength 30 ] )
+            PasswordProp ((fun f -> <@ f.Password @>), [ passwordPattern ] )
+            PasswordProp ((fun f -> <@ f.ConfirmPassword @>), [ passwordPattern ] )
+            ],[ passwordsMatch ])

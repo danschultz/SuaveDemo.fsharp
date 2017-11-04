@@ -26,5 +26,6 @@ module Admin =
     let deleteAlbum : IntPath = "/admin/delete/%d"
 
 module Account =
-    let login = "/admin/login"
-    let logout = "/admin/logout"
+    let login = "/account/login"
+    let logout = "/account/logout"
+    let register = "/account/register"

@@ -20,6 +20,8 @@ let partUser (user : string option) =
             yield a Path.Account.logout [] [ Text "Logout" ]
         | None ->
             yield a Path.Account.login [] [ Text "Login" ]
+            yield Text " "
+            yield a Path.Account.register [] [ Text "Register" ]
     ]
 
 let index partNav partUser container =
@@ -149,12 +151,13 @@ module Cart =
         | [] -> empty
         | list -> nonEmpty list
 
-module Admin =
-
+module Account =
     let login message = [
         h2 "Login"
         p [] [
-            Text "Please enter your username and password."
+            Text "Please enter your username and password. "
+            a Path.Account.register [] [ Text "Register" ]
+            Text " if you don't have an account yet."
         ]
         div ["id", "logon-message"] [ Text message ]
         renderForm
@@ -170,6 +173,29 @@ module Admin =
               SubmitText = "Login"
             }
     ]
+
+    let register message = [
+        h2 "Register"
+        p [] [ Text "Use the form below to create a new account."]
+        div ["id", "register-message"] [ Text message ]
+        renderForm
+            { Form = Form.register
+              Fieldsets =
+                  [ { Legend = "Create a New Account"
+                      Fields =
+                          [ { Label = "User name (max 30 characters)"
+                              Html = formInput (fun f -> <@ f.Username @>) [] }
+                            { Label = "Email address"
+                              Html = formInput (fun f -> <@ f.Email @>) [] }
+                            { Label = "Password (between 6 and 20 characters)"
+                              Html = formInput (fun f -> <@ f.Password @>) [] }
+                            { Label = "Confirm password"
+                              Html = formInput (fun f -> <@ f.ConfirmPassword @>) [] }
+                            ] } ]
+              SubmitText = "Register" }
+    ]
+
+module Admin =
 
     let manage (albums : Database.AlbumDetails list) = [
         h2 "Index"
