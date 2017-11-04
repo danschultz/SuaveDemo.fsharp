@@ -35,8 +35,9 @@ let session f =
         match x |> HttpContext.state with
         | None -> f NoSession
         | Some state ->
-            match state.get "username", state.get "role" with
-            | Some username, Some role ->
+            match state.get "cartid", state.get "username", state.get "role" with
+            | Some cartId, None, None -> f (CartIdOnly cartId)
+            | _, Some username, Some role ->
                 f (UserLoggedIn { Username = username; Role = role })
             | _ -> f NoSession)
 
@@ -78,13 +79,17 @@ let admin f =
         | _ -> UNAUTHORIZED "Not logged in"))
 
 let html container =
-    let result user =
-        OK (View.index (View.partUser user) container)
+    let context = Database.getContext ()
+    let result cartItems user =
+        OK (View.index (View.partNav cartItems) (View.partUser user) container)
         >=> Writers.setMimeType "text/html; charset=utf-8"
 
     session (function
-    | UserLoggedIn { Username = username } -> result (Some username)
-    | NoSession -> result None)
+    | UserLoggedIn { Username = username } ->
+        result (Database.countCartItems username context) (Some username)
+    | CartIdOnly cartId ->
+        result (Database.countCartItems cartId context) None
+    | NoSession -> result 0 None)
 
 let bindToForm form handler =
     bindReq (bindForm form) handler BAD_REQUEST
@@ -124,7 +129,11 @@ module Admin =
             match Database.validateUser (form.Username, hashPassword password) context with
             | Some user ->
                 authenticated Cookie.CookieLife.Session false
-                >=> session (fun _ -> succeed)
+                >=> session (function
+                    | CartIdOnly cartId ->
+                        Database.upgradeCarts (cartId, user.Username) context
+                        sessionStore (fun store -> store.set "cartid" "")
+                    | _ -> succeed)
                 >=> sessionStore (fun store ->
                     store.set "username" user.Username
                     >=> store.set "role" user.Role
@@ -194,7 +203,40 @@ module Admin =
             ]
         | None -> never
 
-let cart = View.Cart.cart [] |> html
+module Cart =
+    let overview =
+        session (function
+            | NoSession -> View.Cart.empty |> html
+            | UserLoggedIn { Username = cartId } | CartIdOnly cartId ->
+                let context = Database.getContext()
+                Database.getCartDetails cartId context
+                |> View.Cart.cart
+                |> html)
+
+    let addToCart albumId =
+        let context = Database.getContext ()
+        session (function
+                | NoSession ->
+                    let cartId = Guid.NewGuid().ToString("N")
+                    Database.addToCart cartId albumId context
+                    sessionStore (fun store -> store.set "cartid" cartId)
+                | UserLoggedIn { Username = cartId } | CartIdOnly cartId ->
+                    Database.addToCart cartId albumId context
+                    succeed)
+            >=> Redirection.FOUND Path.Cart.overview
+
+    let removeFromCart albumId =
+        session (function
+            | NoSession -> never
+            | UserLoggedIn { Username = cartId } | CartIdOnly cartId ->
+                let context = Database.getContext ()
+                match Database.getCart cartId albumId context with
+                | Some cart ->
+                    Database.removeFromCart cart albumId context
+                    succeed
+                | None -> never)
+            >=> Redirection.FOUND Path.Cart.overview
+
 
 let app =
     choose [
@@ -206,7 +248,9 @@ let app =
         path Path.Store.browse >=> Store.browse
         pathScan Path.Store.details Store.details
 
-        path Path.Cart.overview >=> cart
+        path Path.Cart.overview >=> Cart.overview
+        pathScan Path.Cart.addAlbum Cart.addToCart
+        pathScan Path.Cart.removeAlbum Cart.removeFromCart
 
         path Path.Admin.manage >=> admin Admin.manage
         path Path.Admin.createAlbum >=> admin Admin.createAlbum

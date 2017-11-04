@@ -15,6 +15,9 @@ module Store =
 
 module Cart =
     let overview = "/cart"
+    let addAlbum : IntPath = "/cart/add/%d"
+    let removeAlbum : IntPath = "/cart/remove/%d"
+    let checkout = "/cart/checkout"
 
 module Admin =
     let manage = "/admin/manage"

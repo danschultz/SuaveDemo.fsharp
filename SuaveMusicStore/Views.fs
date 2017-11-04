@@ -4,11 +4,11 @@ open Html
 open Suave.Form
 open Suave.Html
 
-let partNav =
+let partNav cartItems =
     ulAttr ["id", "navlist"] [
         li [ a Path.home [] [ Text "Home" ] ]
         li [ a Path.Store.overview [] [ Text "Store" ] ]
-        li [ a Path.Cart.overview [] [ Text "Cart"] ]
+        li [ a Path.Cart.overview [] [ Text (sprintf "Cart (%d)" cartItems) ] ]
         li [ a Path.Admin.manage [] [ Text "Admin" ] ]
     ]
 
@@ -22,7 +22,7 @@ let partUser (user : string option) =
             yield a Path.Account.login [] [ Text "Login" ]
     ]
 
-let index partUser container =
+let index partNav partUser container =
     html [] [
         head [] [
             title [] "Suave Music Store"
@@ -102,6 +102,10 @@ module Store =
                     em caption
                     Text text
                 ]
+
+            yield p ["class", "button"] [
+                a (sprintf Path.Cart.addAlbum album.Albumid) [] [ Text "Add to cart" ]
+            ]
         ]
     ]
 
@@ -109,7 +113,7 @@ module Cart =
     let empty = [
         h2 "Your cart is empty"
         Text "Find some music in our "
-        a Path.home [] [ Text "store" ]
+        a Path.Store.overview [] [ Text "store" ]
         Text "!"
     ]
 
@@ -118,7 +122,7 @@ module Cart =
         table [
             yield tr [
                 let headers = ["Album Name"; "Price"; "Quantity"; ""]
-                for h in headers -> Text h
+                for h in headers -> th [ Text h ]
             ]
 
             for cart in carts ->
@@ -127,7 +131,10 @@ module Cart =
                     td [ Text (formatDec cart.Price) ]
                     td [ Text (cart.Count.ToString()) ]
                     td [
-                        a "#" ["class", "removeFromCart"; "data-id", cart.Albumid.ToString()] [ Text "Remove from cart" ]
+                        a (sprintf Path.Cart.removeAlbum cart.Albumid)
+                            [ "class", "removeFromCart";
+                              "data-id", cart.Albumid.ToString() ]
+                            [ Text "Remove from cart" ]
                     ]
                 ]
 

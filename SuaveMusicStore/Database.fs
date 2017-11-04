@@ -21,6 +21,7 @@ type Genre = DbContext.``public.genresEntity``
 type AlbumDetails = DbContext.``public.albumdetailsEntity``
 type Artist = DbContext.``public.artistsEntity``
 type User = DbContext.``public.usersEntity``
+type Cart = DbContext.``public.cartsEntity``
 type CartDetails = DbContext.``public.cartdetailsEntity``
 
 let getContext () = Sql.GetDataContext()
@@ -79,3 +80,47 @@ let validateUser (username, password) (context : DbContext) : User option =
             where (user.Username = username && user.Password = password)
             select user
     } |> Seq.tryHead
+
+let getCart cartId albumId (context : DbContext) : Cart option =
+    query {
+        for cart in context.Public.Carts do
+            where (cart.Cartid = cartId && cart.Albumid = albumId)
+            select cart
+    } |> Seq.tryHead
+
+let getCarts cartId (context : DbContext) : Cart list =
+    query {
+        for cart in context.Public.Carts do
+            where (cart.Cartid = cartId)
+            select cart
+    } |> Seq.toList
+
+let getCartDetails cartId (context : DbContext) : CartDetails list =
+    query {
+        for cartDetails in context.Public.Cartdetails do
+            where (cartDetails.Cartid = cartId)
+            select cartDetails
+    } |> Seq.toList
+
+let countCartItems cartId (context : DbContext) =
+    getCartDetails cartId context |> List.sumBy (fun c -> c.Count)
+
+let addToCart cartId albumId (context : DbContext) =
+    match getCart cartId albumId context with
+    | Some cart -> cart.Count <- cart.Count + 1
+    | None -> context.Public.Carts.Create(albumId, cartId, 1, System.DateTime.UtcNow) |> ignore
+    context.SubmitUpdates()
+
+let removeFromCart (cart : Cart) albumId (context : DbContext) =
+    cart.Count <- cart.Count - 1
+    if cart.Count = 0 then cart.Delete()
+    context.SubmitUpdates()
+
+let upgradeCarts (cartId, username) (context : DbContext) =
+    for cart in getCarts cartId context do
+        match getCart username cart.Albumid context with
+        | Some existing ->
+            existing.Count <- existing.Count + cart.Count
+            cart.Delete()
+        | None -> cart.Cartid <- username
+    context.SubmitUpdates()
