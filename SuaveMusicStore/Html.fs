@@ -11,6 +11,8 @@ let ul nodes = tag "ul" [] nodes
 
 let li = tag "li" []
 
+let ulAttr attr nodes = tag "ul" attr nodes
+
 let em s = tag "em" [] [ Text s ]
 
 let table content = tag "table" [] content

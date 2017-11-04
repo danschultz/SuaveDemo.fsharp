@@ -4,9 +4,9 @@ open FSharp.Data.Sql
 
 [<Literal>]
 let ConnectionString =
-    "Server=localhost;"           +
+    "Server=localhost;"         +
     "Database=suavemusicstore;" +
-    "User Id=suave;"           +
+    "User Id=suave;"            +
     "Password=1234;"
 
 type Sql =
@@ -20,6 +20,7 @@ type Album = DbContext.``public.albumsEntity``
 type Genre = DbContext.``public.genresEntity``
 type AlbumDetails = DbContext.``public.albumdetailsEntity``
 type Artist = DbContext.``public.artistsEntity``
+type User = DbContext.``public.usersEntity``
 
 let getContext () = Sql.GetDataContext()
 
@@ -70,3 +71,10 @@ let deleteAlbum (album : Album) (context : DbContext) =
 
 let getArtists (context : DbContext) : Artist list =
     context.Public.Artists |> Seq.toList
+
+let validateUser (username, password) (context : DbContext) : User option =
+    query {
+        for user in context.Public.Users do
+            where (user.Username = username && user.Password = password)
+            select user
+    } |> Seq.tryHead

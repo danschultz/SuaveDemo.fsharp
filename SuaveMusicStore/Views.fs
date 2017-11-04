@@ -4,7 +4,24 @@ open Html
 open Suave.Form
 open Suave.Html
 
-let index container =
+let partNav =
+    ulAttr ["id", "navlist"] [
+        li [ a Path.home [] [ Text "Home" ] ]
+        li [ a Path.Store.overview [] [ Text "Store" ] ]
+        li [ a Path.Admin.manage [] [ Text "Admin" ] ]
+    ]
+
+let partUser (user : string option) =
+    div ["id", "part-user"] [
+        match user with
+        | Some user ->
+            yield Text (sprintf "Logged in as %s, " user)
+            yield a Path.Account.logout [] [ Text "Logout" ]
+        | None ->
+            yield a Path.Account.login [] [ Text "Login" ]
+    ]
+
+let index partUser container =
     html [] [
         head [] [
             title [] "Suave Music Store"
@@ -16,6 +33,8 @@ let index container =
                 tag "h1" [] [
                     a "/" [] [ Text "F# Suave Music Store" ]
                 ]
+                partNav
+                partUser
             ]
 
             div ["id", "main"] container
@@ -86,6 +105,26 @@ module Store =
     ]
 
 module Admin =
+
+    let login message = [
+        h2 "Login"
+        p [] [
+            Text "Please enter your username and password."
+        ]
+        div ["id", "logon-message"] [ Text message ]
+        renderForm
+            { Form = Form.login
+              Fieldsets =
+                [ { Legend = "Account Information"
+                    Fields =
+                        [ { Label = "Username"
+                            Html = formInput (fun f -> <@ f.Username @>) [] }
+                          { Label = "Password"
+                            Html = formInput (fun f -> <@ f.Password @>) [] }
+                        ] } ]
+              SubmitText = "Login"
+            }
+    ]
 
     let manage (albums : Database.AlbumDetails list) = [
         h2 "Index"

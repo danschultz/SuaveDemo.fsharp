@@ -10,9 +10,16 @@ type Album = {
     ArtUrl : string
 }
 
+type Login = {
+    Username : string
+    Password : Password
+}
+
 let album : Form<Album> =
     Form ([
         TextProp ((fun f -> <@ f.Title @>), [ maxLength 100 ])
         TextProp ((fun f -> <@ f.ArtUrl @>), [ maxLength 100 ])
         DecimalProp ((fun f -> <@ f.Price @>), [ min 0.01M; max 100.0M; step 0.01M ])
     ], [])
+
+let login : Form<Login> = Form([], [])
