@@ -1,6 +1,5 @@
 ﻿open System
 
-
 open Suave
 open Suave.Authentication
 open Suave.Cookie
@@ -256,7 +255,7 @@ module Auth =
                     |> html
                 | None ->
                     let (Password password) = form.Password
-                    let user = Database.newUser (form.Username, password, form.Email) context
+                    let user = Database.newUser (form.Username, hashPassword password, form.Email) context
                     authenticateUser user)
         ]
 

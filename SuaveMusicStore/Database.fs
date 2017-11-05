@@ -41,7 +41,7 @@ let getUser username (context : DbContext) : User option =
     } |> Seq.tryHead
 
 let newUser (username, password, email) (context : DbContext) =
-    let user = context.Public.Users.Create(username, password, "user", email)
+    let user = context.Public.Users.Create(email, password, "user", username)
     context.SubmitUpdates()
     user
 
