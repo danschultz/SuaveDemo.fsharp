@@ -1,5 +1,10 @@
-## Observations
+# F# Suave Demo
 
-* Disciminated unions provide a simple way to describe state
-* Pattern matching warns you if a case is not covered, making your program more
-  robust
+Tutorial to create an app with F# and Suave.
+
+See https://www.gitbook.com/book/theimowski/suave-music-store/details
+
+## Running
+
+1. Download Visual Studio for Mac
+2. Compile and run
