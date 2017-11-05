@@ -136,3 +136,18 @@ let upgradeCarts (cartId, username) (context : DbContext) =
             cart.Delete()
         | None -> cart.Cartid <- username
     context.SubmitUpdates()
+
+let placeOrder username (context : DbContext) =
+    let carts = getCartDetails username context
+    let total = carts |> List.sumBy (fun cart -> (decimal) cart.Count * cart.Price)
+    let order = context.Public.Orders.Create(System.DateTime.UtcNow, total)
+    order.Username <- username
+    context.SubmitUpdates()
+
+    for cart in carts do
+        let orderDetails =
+            context.Public.Orderdetails.Create(
+                cart.Albumid, order.Orderid, cart.Count, cart.Price)
+        getCart cart.Cartid cart.Albumid context
+        |> Option.iter (fun cart -> cart.Delete())
+    context.SubmitUpdates()

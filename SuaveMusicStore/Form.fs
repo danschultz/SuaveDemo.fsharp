@@ -22,6 +22,13 @@ type Register = {
     ConfirmPassword : Password
 }
 
+type Checkout = {
+    FirstName : string
+    LastName : string
+    Address : string
+    PromoCode : string option
+}
+
 let album : Form<Album> =
     Form ([
         TextProp ((fun f -> <@ f.Title @>), [ maxLength 100 ])
@@ -41,3 +48,5 @@ let register : Form<Register> =
             PasswordProp ((fun f -> <@ f.Password @>), [ passwordPattern ] )
             PasswordProp ((fun f -> <@ f.ConfirmPassword @>), [ passwordPattern ] )
             ],[ passwordsMatch ])
+
+let checkout : Form<Checkout> = Form([], [])

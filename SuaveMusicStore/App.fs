@@ -1,5 +1,4 @@
 ﻿open System
-
 open Suave
 open Suave.Authentication
 open Suave.Cookie
@@ -216,6 +215,18 @@ module Cart =
                 | None -> never)
             >=> Redirection.FOUND Path.Cart.overview
 
+    let checkout =
+        session (function
+        | NoSession -> never
+        | CartIdOnly _ -> redirectionWithReturnPath Path.Account.login
+        | UserLoggedIn { Username = username } ->
+            choose [
+                GET >=> (View.Cart.checkout |> html)
+                POST >=> warbler (fun _ ->
+                    let context = Database.getContext ()
+                    Database.placeOrder username context
+                    View.Cart.checkoutComplete |> html)
+            ])
 
 module Auth =
     let authenticateUser (user : Database.User) =
@@ -233,13 +244,21 @@ module Auth =
 
     let login =
         choose [
-            GET >=> (View.Account.login "" |> html)
+            // GET >=> (View.Account.login "" |> html)
+            GET >=>
+                request (fun req ->
+                    match req.queryParam "returnPath" with
+                    | Choice1Of2 path ->
+                        let registerUrl = Path.withParam ("returnPath", path) Path.Account.register
+                        View.Account.login "" registerUrl |> html
+                    | _ ->
+                        View.Account.login "" Path.Account.register |> html)
             POST >=> bindToForm Form.login (fun form ->
                 let context = Database.getContext()
                 let (Password password) = form.Password
                 match Database.validateUser (form.Username, hashPassword password) context with
                 | Some user -> authenticateUser user
-                | _ -> (View.Account.login "Incorrect username or password" |> html)
+                | _ -> (View.Account.login "Incorrect username or password" Path.Account.register |> html)
             )
         ]
 
@@ -273,6 +292,7 @@ let app =
         path Path.Cart.overview >=> Cart.overview
         pathScan Path.Cart.addAlbum Cart.addToCart
         pathScan Path.Cart.removeAlbum Cart.removeFromCart
+        path Path.Cart.checkout >=> Cart.checkout
 
         path Path.Admin.manage >=> admin Admin.manage
         path Path.Admin.createAlbum >=> admin Admin.createAlbum

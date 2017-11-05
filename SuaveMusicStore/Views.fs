@@ -121,6 +121,9 @@ module Cart =
 
     let nonEmpty (carts : Database.CartDetails list) = [
         h2 "Review your cart:"
+        p ["class", "button"] [
+            a Path.Cart.checkout [] [ Text "Checkout >>" ]
+        ]
         table [
             yield tr [
                 let headers = ["Album Name"; "Price"; "Quantity"; ""]
@@ -151,12 +154,44 @@ module Cart =
         | [] -> empty
         | list -> nonEmpty list
 
+    let checkout = [
+        h2 "Address and Payment"
+        renderForm
+            { Form = Form.checkout
+              Fieldsets =
+                  [ { Legend = "Shipping Information"
+                      Fields =
+                          [ { Label = "First Name"
+                              Html = formInput (fun f -> <@ f.FirstName @>) [] }
+                            { Label = "Last Name"
+                              Html = formInput (fun f -> <@ f.LastName @>) [] }
+                            { Label = "Address"
+                              Html = formInput (fun f -> <@ f.Address @>) [] }
+                          ] }
+                    { Legend = "Payment"
+                      Fields =
+                          [ { Label = "Promo Code"
+                              Html = formInput (fun f -> <@ f.PromoCode @>) [] } ] } ]
+              SubmitText = "Submit Order"
+            }
+    ]
+
+    let checkoutComplete = [
+        h2 "Checkout Complete"
+        p [] [ Text "Thanks for your order!" ]
+        p [] [
+            Text "How about shopping for some more music in our "
+            a Path.Store.overview [] [ Text "store"]
+            Text "?"
+        ]
+    ]
+
 module Account =
-    let login message = [
+    let login message registerUrl = [
         h2 "Login"
         p [] [
             Text "Please enter your username and password. "
-            a Path.Account.register [] [ Text "Register" ]
+            a registerUrl [] [ Text "Register" ]
             Text " if you don't have an account yet."
         ]
         div ["id", "logon-message"] [ Text message ]
